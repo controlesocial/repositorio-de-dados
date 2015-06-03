@@ -35,8 +35,16 @@ unzip prestacao_final_2014.zip
 ####################################
 # Importação para banco PostgreSQL #
 ####################################
-echo 'Criando usuário do banco PostgreSQL: morpheus com a senha "pilulavermelha" ...';
-git clone https://github.com/controlesocial/repositorio-de-dados.git /home/$USER/controlesocial
+echo 'Copiando scripts de importação de dados';
+git clone https://github.com/controlesocial/repositorio-de-dados.git /home/$USER/controlesocial/
 cd /home/$USER/controlesocial/
 
+echo '# Criação do banco controlesocial #';
+echo '# Banco: controlesocial';
+echo '# Usuário: morpheus';
+echo '# Senha: pilulavermelha';
 psql -h localhost -p 5432 -U morpheus -f "./repositorio-de-dados/scripts/sql/0_create_role_database_schema_table.sql"
+
+echo 'Iniciando cópia dos arquivos de 2014 ...'
+psql -h localhost -p 5432 -U morpheus -f "./repositorio-de-dados/scripts/sql/1_copy_despesas_candidatos.sql"
+psql -h localhost -p 5432 -U morpheus -f "./repositorio-de-dados/scripts/sql/2_alter_type_despesas_candidatos.sql"
