@@ -31,3 +31,33 @@ wget http://agencia.tse.jus.br/estatistica/sead/odsele/prestacao_contas/prestaca
 ##########################
 echo '#> descompactando...';
 unzip prestacao_final_2014.zip
+
+####################################
+# Importação para banco PostgreSQL #
+####################################
+echo 'Criando usuário do banco PostgreSQL: morpheus com a senha "pilulavermelha" ...';
+psql -h localhost -p 5432 -U morpheus -c
+"CREATE ROLE morpheus LOGIN
+   ENCRYPTED PASSWORD 'pilulavermelhar'
+   SUPERUSER INHERIT CREATEDB CREATEROLE REPLICATION;"
+
+echo 'Criando banco de dados: controlesocial ...';
+psql -h localhost -p 5432 -U morpheus -c
+"CREATE DATABASE controlesocial
+  WITH OWNER = morpheus
+       ENCODING = 'UTF8'
+       TABLESPACE = pg_default
+       LC_COLLATE = 'Portuguese_Brazil.1252'
+       LC_CTYPE = 'Portuguese_Brazil.1252'
+       CONNECTION LIMIT = -1;"
+
+echo 'Criando tabela despesas_candidatos ...';
+psql -h localhost -p 5432 -U morpheus -c
+'
+create table despesas_candidatos (
+"Cód. Eleição" TEXT, "Desc. Eleição" TEXT, "Data e hora" TEXT, "CNPJ Prestador Conta" TEXT, "Sequencial Candidato" TEXT, "UF" TEXT, "Sigla  Partido" TEXT, "Número candidato" TEXT, "Cargo" TEXT, "Nome candidato" TEXT, "CPF do candidato" TEXT, "Tipo do documento" TEXT, "Número do documento" TEXT, "CPF/CNPJ do fornecedor" TEXT, "Nome do fornecedor" TEXT, "Nome do fornecedor (Receita Federal)" TEXT, "Cod setor econômico do doador" TEXT, "Setor econômico do fornecedor" TEXT, "Data da despesa" TEXT, "Valor despesa" TEXT, "Tipo despesa" TEXT, "Descriçao da despesa" TEXT
+);
+'
+
+echo 'Iniciando cópia dos arquivos de 2014 ...'
+psql -h localhost -p 5432 -U morpheus -c "COPY despesas_candidatos FROM 'C:\Program Files\PostgreSQL\9.4\data\pg_log\prestacao_final_2014\despesas_candidatos_2014_PB.txt' WITH CSV HEADER DELIMITER ';';"
