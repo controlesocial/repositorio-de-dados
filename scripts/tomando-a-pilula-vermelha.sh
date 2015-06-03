@@ -60,4 +60,30 @@ create table despesas_candidatos (
 '
 
 echo 'Iniciando cópia dos arquivos de 2014 ...'
-psql -h localhost -p 5432 -U morpheus -c "COPY despesas_candidatos FROM 'C:\Program Files\PostgreSQL\9.4\data\pg_log\prestacao_final_2014\despesas_candidatos_2014_PB.txt' WITH CSV HEADER DELIMITER ';';"
+psql -h localhost -p 5432 -U morpheus -c "
+DO $$
+DECLARE
+    uf VARCHAR(2);
+    arrayUFs VARCHAR(2)[] := ARRAY['AC', 'AL', 'AM', 'AP', 'BA', 'BR', 'CE', 'DF', 'ES', 'GO', 'MA', 'MG', 'MS', 'MT', 'PA', 'PB', 'PE', 'PI', 'PR', 'RJ', 'RN', 'RO', 'RR', 'RS', 'SC', 'SE', 'SP', 'TO'];
+BEGIN
+
+    RAISE NOTICE '%', arrayUFs;
+
+    FOREACH uf IN ARRAY arrayUFs
+    LOOP
+        RAISE NOTICE '%', uf;
+        EXECUTE 'COPY despesas_candidatos FROM ''C:\Program Files\PostgreSQL\9.4\data\pg_log\prestacao_final_2014\despesas_candidatos_2014_'||uf||'.txt'' WITH CSV HEADER DELIMITER '';'';';
+    END LOOP;
+END; $$
+"
+psql -h localhost -p 5432 -U morpheus -c '
+ALTER TABLE despesas_candidatos ALTER COLUMN "Cód. Eleição" TYPE INTEGER USING (("Cód. Eleição")::INTEGER);
+ALTER TABLE despesas_candidatos ALTER COLUMN "Data e hora" TYPE TIMESTAMP WITHOUT TIME ZONE USING (("Data e hora")::TIMESTAMP WITHOUT TIME ZONE);
+ALTER TABLE despesas_candidatos ALTER COLUMN "Número candidato" TYPE INTEGER USING (("Número candidato")::INTEGER);
+
+UPDATE despesas_candidatos SET "Data da despesa" = REPLACE( "Data da despesa", '00:00:00', '');
+ALTER TABLE despesas_candidatos ALTER COLUMN "Data da despesa" TYPE DATE USING (("Data da despesa")::DATE);
+
+UPDATE despesas_candidatos SET "Valor despesa" = REPLACE( "Valor despesa", ',', '.');
+ALTER TABLE despesas_candidatos ALTER COLUMN "Valor despesa" TYPE NUMERIC(12,2) USING (("Valor despesa")::NUMERIC(12,2));
+'
